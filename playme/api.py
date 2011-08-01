@@ -1,4 +1,5 @@
-'''This is an utility module that provides a raw playMe web API interface.
+"""
+This is an utility module that provides a raw playMe web API interface.
 
 It helps to hide :py:class:`playme.core.Method` transforming:
 
@@ -18,7 +19,7 @@ into:
 ...     pass
 
 From this module can be imported :py:attr:`artist`, :py:attr:`album`, :py:attr:`track` and :py:attr:`genre`
-'''
+"""
 import playme
 __license__, __author__ = playme.__license__, playme.__author__
 
