@@ -9,7 +9,7 @@ __classifiers__ = [
     'Topic :: Software Development :: Libraries',
 ]
 __all__ = [
-    'core',
+    'core', 'api'
 ]
 __copyright__ = "2011, %s " % __author__
 __license__ = """

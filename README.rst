@@ -20,11 +20,13 @@ Let's playMe!
 
 >>> import playme
 >>> apikey = '<your-apikey>'
+>>> country= '<coutry-catalogue>'
 >>> try:
-...     artist = playme.Method('artist')
-...     artist.get(artistCode=421, apikey=apikey)
-... except playme.core.Error, e:
+...     #a = playme.api.artist.searchByName(apikey=apikey,country=country,query='Metallica')
+...     a = playme.api.artist.get(apikey=apikey,country=country,artistCode=1073)
+... except playme.core.Error as e:
 ...     pass
+
 
 Building / Installing
 =====================

@@ -3,9 +3,8 @@
 import playme
 __license__, __author__ = playme.__license__, playme.__author__
 
-from contextlib import contextmanager
 from urllib import urlencode
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError
 import json
 
 class Error(Exception):
@@ -200,7 +199,7 @@ class Response(dict):
             return ResponseStatus.success()
 
     def __repr__(self):
-        return "%s('...')" % type(self).__name__
+        return '{0}(...)'.format(type(self).__name__)
 
 
 class QueryString(dict):
@@ -328,21 +327,15 @@ class Request(object):
         self.data = query_string
         self._response = None
 
-    @contextmanager
-    def _received(self):
-        """A context manager to handle url opening"""
-        try:
-            response = urlopen(str(self))
-            yield response
-        finally:
-            response.close()
-
     @property
     def response(self):
         """The :py:class:`Response`"""
         if not self._response:
-            with self._received() as message:
-                self._response = Response(message.read())
+            try:
+                response = urlopen(str(self))
+            except HTTPError as e:
+                response = e
+            self._response = Response(response.read())
         return self._response
 
     def __repr__(self):
@@ -383,6 +376,7 @@ class Method(str):
 
     def __call__ (self, **query):
         query['format'] = 'json'
+        print query
         return Request(self, query).response
 
     def __repr__(self):
