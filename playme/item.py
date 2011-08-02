@@ -8,6 +8,13 @@ import playme
 __license__, __author__ = playme.__license__, playme.__author__
 
 from playme import core
+from playme.api import artist, album, track
+
+def str_keys(d):
+    if not isinstance(d, dict):
+        d = dict(d)
+    return dict([(str(k),v) for k,v in d.items()])
+
 
 class Item(dict):
     """ This is the base class for every entity in playMe package.
@@ -20,6 +27,18 @@ class Item(dict):
     """
     api_method = None
     label = None
+
+    def __init__(self, **kwargs):
+        if self.label in kwargs:
+            kw = str_keys(kwargs[self.label])
+            del kwargs[self.label]
+            for k,v in kwargs.items():
+                try:
+                    kw[k] = LABEL2CLS[k](*v[LABEL2CLS[k].item_type.label])
+                except KeyError:
+                    pass
+            kwargs = kw
+        self.update(**kwargs)
 
     def __repr__(self):
         return '%s(%s)' % (
@@ -44,14 +63,14 @@ class Item(dict):
             raise NotImplementedError(cls.__name__ + '.api_method')
         if not response.status:
             raise core.Error(str(response.status))
-        return cls(**response[cls.label])
+        return cls(**str_keys(response))
 
 
 class ItemsCollection(tuple):
     """ This is the base class for collections of items, like search results, or
     playlist. It behaves like :py:class:`tuple`, but enforce new items to be
     instance of appropriate class checking against :py:attr:`item_type`.
-    >>> ItemsCollection('a',1,[('a',1), ('b',2)], {'a':3,'b':4}, Item(a=5,b=6))
+    >>> ItemsCollection('a',1,[('a',1), ('b',2)], {u'a':3,u'b':4}, Item(a=5,b=6))
     ItemsCollection(Item(a = 1, b = 2), Item(a = 3, b = 4), Item(a = 5, b = 6))
     """
     item_type = Item
@@ -62,8 +81,8 @@ class ItemsCollection(tuple):
         for item in args:
             if not isinstance(item, cls.item_type):
                 try:
-                    item = cls.item_type(item)
-                except (ValueError, TypeError):
+                    item = cls.item_type(**str_keys(item))
+                except (ValueError, TypeError, AttributeError) as e:
                     item = None
             if item and item not in casted:
                 casted.append(item)
@@ -96,9 +115,56 @@ class ItemsCollection(tuple):
             raise TypeError, type(index)
 
     @classmethod
+    def request(cls, method, **kwargs):
+        """ Returns an object instance after an API call
+        """
+        return cls.fromResponseMessage(method(**kwargs))
+
+    @classmethod
     def fromResponseMessage(cls, response):
         """ Returns an object instance, built on a :py:class:`playme.core.Response`
         """
         if not response.status:
             raise core.Error(str(response.status))
-        return cls(*[i[cls.item_type.label] for i in response[cls.label]])
+        return cls(*[i for i in response[cls.label]])
+
+
+class Artist(Item):
+    api_method = artist.get
+    label = 'artist'
+
+
+class Artists(ItemsCollection):
+    item_type = Artist
+    label = 'artists'
+
+    @classmethod
+    def searchByName(cls, **kwargs):
+        return cls.request(artist.searchByName, **kwargs)
+
+
+class Album(Item):
+    api_method = album.get
+    label = 'album'
+
+
+class Albums(ItemsCollection):
+    item_type = Album
+    label = 'albums'
+
+
+class Track(Item):
+    api_method = track.get
+    label = 'track'
+
+
+class Tracks(ItemsCollection):
+    item_type = Track
+    label = 'tracks'
+
+
+ENTITIES = (Artist, Artists, Album, Albums, Track, Tracks)
+CLS2LABEL = dict([(e, e.label) for e in ENTITIES])
+LABEL2CLS = dict([(v,k) for k,v in CLS2LABEL.items()])
+
+

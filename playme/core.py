@@ -376,7 +376,6 @@ class Method(str):
 
     def __call__ (self, **query):
         query['format'] = 'json'
-        print query
         return Request(self, query).response
 
     def __repr__(self):
